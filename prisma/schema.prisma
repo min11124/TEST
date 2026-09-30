@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// NOTE: provider is "sqlite" for local dev only — this dev machine has no
+// local Postgres/Docker available. Switch to "postgresql" (and set a real
+// DATABASE_URL) before deploying.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum TodoStatus {
+  TODO
+  DOING
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model YearlyGoal {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  year        Int
+  weeklyGoals WeeklyGoal[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model WeeklyPlan {
+  id            String       @id @default(cuid())
+  weekStartDate DateTime
+  weekEndDate   DateTime
+  memo          String?
+  retrospective String? // P1
+  weeklyGoals   WeeklyGoal[]
+  todos         Todo[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// 이번 주 목표 (최대 3~5개, 앱 레벨에서 개수 제한)
+model WeeklyGoal {
+  id           String      @id @default(cuid())
+  title        String
+  weeklyPlan   WeeklyPlan  @relation(fields: [weeklyPlanId], references: [id])
+  weeklyPlanId String
+  yearlyGoal   YearlyGoal? @relation(fields: [yearlyGoalId], references: [id])
+  yearlyGoalId String?
+  todos        Todo[]
+  createdAt    DateTime    @default(now())
+}
+
+model Todo {
+  id           String      @id @default(cuid())
+  title        String
+  description  String?
+  status       TodoStatus  @default(TODO)
+  dayOfWeek    Int // 0=일 ~ 6=토
+  priority     Priority? // P1
+  dueDate      DateTime? // P1
+  weeklyPlan   WeeklyPlan  @relation(fields: [weeklyPlanId], references: [id])
+  weeklyPlanId String
+  weeklyGoal   WeeklyGoal? @relation(fields: [weeklyGoalId], references: [id])
+  weeklyGoalId String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
